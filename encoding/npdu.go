@@ -32,7 +32,7 @@ License.
 package encoding
 
 import (
-	bactype "github.com/vanti-dev/gobacnet/types"
+	bactype "github.com/smart-core-os/gobacnet/types"
 )
 
 // NPDU encodes the network layer control message

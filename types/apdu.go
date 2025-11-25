@@ -34,7 +34,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/vanti-dev/gobacnet/enum/pdutype"
+	"github.com/smart-core-os/gobacnet/enum/pdutype"
 )
 
 type ServiceConfirmed uint8

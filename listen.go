@@ -35,9 +35,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/vanti-dev/gobacnet/encoding"
-	"github.com/vanti-dev/gobacnet/enum/pdutype"
-	bactype "github.com/vanti-dev/gobacnet/types"
+	"github.com/smart-core-os/gobacnet/encoding"
+	"github.com/smart-core-os/gobacnet/enum/pdutype"
+	bactype "github.com/smart-core-os/gobacnet/types"
 )
 
 // Close free resources for the client. Always call this function when using NewClient

@@ -1,6 +1,6 @@
-module github.com/vanti-dev/gobacnet
+module github.com/smart-core-os/gobacnet
 
-go 1.17
+go 1.25
 
 require (
 	github.com/mitchellh/go-homedir v1.1.0

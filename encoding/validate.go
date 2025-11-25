@@ -3,9 +3,9 @@ package encoding
 import (
 	"fmt"
 
-	"github.com/vanti-dev/gobacnet/property"
+	"github.com/smart-core-os/gobacnet/property"
 
-	"github.com/vanti-dev/gobacnet/types"
+	"github.com/smart-core-os/gobacnet/types"
 )
 
 func isValidObjectType(idType types.ObjectType) error {

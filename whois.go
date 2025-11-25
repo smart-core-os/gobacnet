@@ -35,8 +35,8 @@ import (
 	"context"
 	"net"
 
-	"github.com/vanti-dev/gobacnet/encoding"
-	"github.com/vanti-dev/gobacnet/types"
+	"github.com/smart-core-os/gobacnet/encoding"
+	"github.com/smart-core-os/gobacnet/types"
 )
 
 // WhoIs finds all devices with ids between the provided low and high values.

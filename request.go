@@ -35,8 +35,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vanti-dev/gobacnet/encoding"
-	bactype "github.com/vanti-dev/gobacnet/types"
+	"github.com/smart-core-os/gobacnet/encoding"
+	bactype "github.com/smart-core-os/gobacnet/types"
 )
 
 // ReadProperty reads a single property from a single object in the given device.

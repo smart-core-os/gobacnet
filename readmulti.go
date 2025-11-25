@@ -36,9 +36,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/vanti-dev/gobacnet/encoding"
-	"github.com/vanti-dev/gobacnet/enum/errorcode"
-	bactype "github.com/vanti-dev/gobacnet/types"
+	"github.com/smart-core-os/gobacnet/encoding"
+	"github.com/smart-core-os/gobacnet/enum/errorcode"
+	bactype "github.com/smart-core-os/gobacnet/types"
 )
 
 // ReadMultiProperty uses the given device and read property request to read

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vanti-dev/gobacnet/property"
-	"github.com/vanti-dev/gobacnet/types"
-	"github.com/vanti-dev/gobacnet/types/objecttype"
+	"github.com/smart-core-os/gobacnet/property"
+	"github.com/smart-core-os/gobacnet/types"
+	"github.com/smart-core-os/gobacnet/types/objecttype"
 )
 
 // RemoteDevices is like WhoIs but does not use broadcast.

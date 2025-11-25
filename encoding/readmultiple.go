@@ -1,8 +1,8 @@
 package encoding
 
 import (
-	"github.com/vanti-dev/gobacnet/enum/pdutype"
-	bactype "github.com/vanti-dev/gobacnet/types"
+	"github.com/smart-core-os/gobacnet/enum/pdutype"
+	bactype "github.com/smart-core-os/gobacnet/types"
 )
 
 func (e *Encoder) ReadMultipleProperty(invokeID uint8, data bactype.ReadMultipleProperty) error {

@@ -34,9 +34,9 @@ package encoding
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/vanti-dev/gobacnet/property"
+	"github.com/smart-core-os/gobacnet/property"
 
-	bactype "github.com/vanti-dev/gobacnet/types"
+	bactype "github.com/smart-core-os/gobacnet/types"
 )
 
 var EncodingEndian binary.ByteOrder = binary.BigEndian

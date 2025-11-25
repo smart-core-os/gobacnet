@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/vanti-dev/gobacnet/baccli/cmd"
+import "github.com/smart-core-os/gobacnet/baccli/cmd"
 
 func main() {
 	cmd.Execute()

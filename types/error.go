@@ -3,9 +3,9 @@ package types
 import (
 	"fmt"
 
-	"github.com/vanti-dev/gobacnet/enum/errorclass"
-	"github.com/vanti-dev/gobacnet/enum/errorcode"
-	"github.com/vanti-dev/gobacnet/property"
+	"github.com/smart-core-os/gobacnet/enum/errorclass"
+	"github.com/smart-core-os/gobacnet/enum/errorcode"
+	"github.com/smart-core-os/gobacnet/property"
 )
 
 // Error represents an error response from a BACnet device.

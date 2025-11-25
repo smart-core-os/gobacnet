@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/json"
-	"github.com/vanti-dev/gobacnet/types/objecttype"
+	"github.com/smart-core-os/gobacnet/types/objecttype"
 	"reflect"
 	"testing"
 )

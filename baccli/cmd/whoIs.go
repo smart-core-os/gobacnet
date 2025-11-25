@@ -22,7 +22,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/vanti-dev/gobacnet"
+	"github.com/smart-core-os/gobacnet"
 )
 
 // Flags

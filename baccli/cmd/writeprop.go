@@ -24,9 +24,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/vanti-dev/gobacnet"
-	"github.com/vanti-dev/gobacnet/property"
-	"github.com/vanti-dev/gobacnet/types"
+	"github.com/smart-core-os/gobacnet"
+	"github.com/smart-core-os/gobacnet/property"
+	"github.com/smart-core-os/gobacnet/types"
 )
 
 // writepropCmd represents the writeprop command

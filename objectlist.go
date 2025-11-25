@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vanti-dev/gobacnet/property"
-	bactype "github.com/vanti-dev/gobacnet/types"
+	"github.com/smart-core-os/gobacnet/property"
+	bactype "github.com/smart-core-os/gobacnet/types"
 )
 
 func (c *Client) objectListLen(ctx context.Context, dev bactype.Device) (int, error) {

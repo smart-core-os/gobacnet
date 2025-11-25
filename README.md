@@ -13,7 +13,7 @@ missing and will be added overtime.
 # Installation
 Part of this library is a command line client. To install from source run:
 ```
-go get -u github.com/vanti-dev/gobacnet/baccli
+go get -u github.com/smart-core-os/gobacnet/baccli
 ```
 
 For usage run:

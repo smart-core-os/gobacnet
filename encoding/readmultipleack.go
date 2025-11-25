@@ -5,10 +5,10 @@ import (
 
 	"go.uber.org/multierr"
 
-	"github.com/vanti-dev/gobacnet/enum/errorclass"
-	"github.com/vanti-dev/gobacnet/enum/errorcode"
-	"github.com/vanti-dev/gobacnet/enum/pdutype"
-	bactype "github.com/vanti-dev/gobacnet/types"
+	"github.com/smart-core-os/gobacnet/enum/errorclass"
+	"github.com/smart-core-os/gobacnet/enum/errorcode"
+	"github.com/smart-core-os/gobacnet/enum/pdutype"
+	bactype "github.com/smart-core-os/gobacnet/types"
 )
 
 func (e *Encoder) ReadMultiplePropertyAck(invokeID uint8, data bactype.ReadMultipleProperty) error {
