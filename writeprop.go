@@ -9,8 +9,7 @@ import (
 )
 
 func (c *Client) WriteProperty(ctx context.Context, dest bactype.Device, wp bactype.ReadPropertyData, priority uint) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+
 	id, err := c.tsm.ID(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to get an transaction id: %w", err)
