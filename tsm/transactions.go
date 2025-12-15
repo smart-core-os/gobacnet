@@ -139,12 +139,12 @@ func (t *TSM) ID(ctx context.Context) (int, error) {
 		// got a free spot, lets try and get a free id
 		select {
 		case id = <-t.free.id:
-		case err := <-ctx.Done():
+		case <-ctx.Done():
 			t.free.space <- struct{}{}
-			return 0, fmt.Errorf("unable to get a free id: %v", err)
+			return 0, fmt.Errorf("unable to get a free id: %v", ctx.Err())
 		}
-	case err := <-ctx.Done():
-		return 0, fmt.Errorf("no free space: %v", err)
+	case <-ctx.Done():
+		return 0, fmt.Errorf("no free space: %v", ctx.Err())
 	}
 
 	// skip error checking, since we control new generation and what is put in the pool.
@@ -152,7 +152,11 @@ func (t *TSM) ID(ctx context.Context) (int, error) {
 	s.state = idle
 	s.requestTimer = 0 // TODO: apdu_timeout
 	s.data = make(chan interface{})
+
+	t.mutex.Lock()
 	t.states[id] = s
+	t.mutex.Unlock()
+
 	return id, nil
 }
 
