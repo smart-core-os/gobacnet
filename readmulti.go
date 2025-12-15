@@ -50,8 +50,6 @@ import (
 func (c *Client) ReadMultiProperty(ctx context.Context, dev bactype.Device, rp bactype.ReadMultipleProperty) (bactype.ReadMultipleProperty, error) {
 	var out bactype.ReadMultipleProperty
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	id, err := c.tsm.ID(ctx)
 	if err != nil {
 		return out, fmt.Errorf("unable to get transaction id: %w", err)
@@ -138,13 +136,20 @@ func (c *Client) ReadProperties(ctx context.Context, dev bactype.Device, propert
 
 	// errors that were sent from the server
 	if bacErr := (bactype.Error{}); errors.As(err, &bacErr) {
-		if bacErr.Code == errorcode.UnknownObject {
+
+		if !shouldRetryIndividually(bacErr.Code) {
 			return out, err
 		}
 	}
 
-	// todo: be more careful retrying only when we think it might succeed - e.g. check for "service not supported"
 	for i, object := range property.Objects {
+
+		select {
+		case <-ctx.Done():
+			return bactype.ReadMultipleProperty{}, ctx.Err()
+		default:
+		}
+
 		propRes, err := c.ReadProperty(ctx, dev, bactype.ReadPropertyData{Object: object})
 		if err != nil {
 			return bactype.ReadMultipleProperty{}, err
@@ -152,4 +157,27 @@ func (c *Client) ReadProperties(ctx context.Context, dev bactype.Device, propert
 		out.Objects[i] = propRes.Object
 	}
 	return out, nil
+}
+
+// shouldRetryIndividually determines if a BACnet error code indicates that
+// individual property reads might succeed when a batch ReadMultipleProperty failed.
+// Returns true for errors related to the batch operation itself (size limits, service support),
+// false for errors related to the actual data (permissions, unknown objects, etc.)
+func shouldRetryIndividually(code errorcode.ErrorCode) bool {
+	switch code {
+	// Service/operation not supported - device might support individual reads
+	case errorcode.OptionalFunctionalityNotSupported, errorcode.ServiceRequestDenied:
+		return true
+
+	// Message size issues - individual reads are smaller
+	case errorcode.AbortBufferOverflow, errorcode.AbortSegmentationNotSupported, errorcode.MessageTooLong, errorcode.AbortApduTooLong:
+		return true
+
+	// Temporary issues that might resolve with smaller requests
+	case errorcode.DeviceBusy, errorcode.Timeout, errorcode.Busy, errorcode.AbortOutOfResources:
+		return true
+
+	default:
+		return false
+	}
 }

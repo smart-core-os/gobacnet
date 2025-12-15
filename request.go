@@ -41,8 +41,7 @@ import (
 
 // ReadProperty reads a single property from a single object in the given device.
 func (c *Client) ReadProperty(ctx context.Context, dest bactype.Device, rp bactype.ReadPropertyData) (bactype.ReadPropertyData, error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+
 	id, err := c.tsm.ID(ctx)
 	if err != nil {
 		return bactype.ReadPropertyData{}, fmt.Errorf("unable to get an transaction id: %w", err)
