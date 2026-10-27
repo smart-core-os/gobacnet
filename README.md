@@ -41,6 +41,17 @@ a feature not in the list below add a discussion on github for it.
 - [ ] Atomic Read File
 - [ ] Atomic Write File
 
+## Server
+The `server` package runs a local BACnet/IP device whose objects other devices
+can discover and read. It comes with Device and Analog Value objects; other
+objects implement `server.Object`.
+- [x] Who Is / I Am
+- [x] Read Property
+- [x] Read Multiple Property
+- [ ] Write Property
+- [ ] Subscribe Change of Value
+- [ ] Segmentation
+
 ## Command Line Interface
 - [x] Who Is
 - [x] Read Property
