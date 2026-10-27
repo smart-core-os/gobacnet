@@ -15,6 +15,9 @@ func (e *Encoder) ReadMultipleProperty(invokeID uint8, data bactype.ReadMultiple
 		MaxApdu:          MaxAPDU,
 		InvokeId:         invokeID,
 		SegmentedMessage: false,
+		// SegmentedResponseAccepted stays false: the client can't reassemble a segmented response.
+		// A device whose reply doesn't fit aborts with segmentation-not-supported instead, and
+		// Client.ReadProperties falls back to reading each property on its own.
 	}
 	e.APDU(a)
 	err := e.objects(data.Objects)

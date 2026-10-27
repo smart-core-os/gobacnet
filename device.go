@@ -53,6 +53,7 @@ type Client struct {
 	tsm              *tsm.TSM // used to transfer incoming messages to the correct handler
 	utsm             *utsm.Manager
 	listener         *net.UDPConn
+	requestTimeout   time.Duration
 	Log              *logrus.Logger
 }
 
@@ -140,6 +141,7 @@ func (cfg ClientOptions) NewClient() (*Client, error) {
 	c.broadcastAddress = broadcast
 
 	c.tsm = tsm.New(cfg.MaxConcurrentTransactions)
+	c.requestTimeout = cfg.RequestTimeout
 	options := []utsm.ManagerOption{
 		utsm.DefaultSubscriberTimeout(time.Second * time.Duration(10)),
 		utsm.DefaultSubscriberLastReceivedTimeout(time.Second * time.Duration(2)),
@@ -191,6 +193,9 @@ type ClientOptions struct {
 	Port      uint16
 
 	MaxConcurrentTransactions uint8
+	// RequestTimeout limits how long each attempt at a confirmed request waits for its reply.
+	// Zero means requests wait until their ctx is done.
+	RequestTimeout time.Duration
 
 	LogLevel logrus.Level
 }
@@ -235,6 +240,14 @@ func WithMaxConcurrentTransactions(size uint8) Option {
 	}
 	return func(client *ClientOptions) {
 		client.MaxConcurrentTransactions = size
+	}
+}
+
+// WithRequestTimeout sets how long each attempt at a confirmed request waits for a reply,
+// on top of any deadline the request's ctx has. Zero, the default, means no limit.
+func WithRequestTimeout(d time.Duration) Option {
+	return func(client *ClientOptions) {
+		client.RequestTimeout = d
 	}
 }
 

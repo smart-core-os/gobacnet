@@ -110,9 +110,10 @@ func (d *Decoder) APDU(a *bactype.APDU) error {
 	case pdutype.Error:
 		return d.apduError(a)
 	case pdutype.Reject:
-		return fmt.Errorf("rejected")
+		return d.apduReject(a)
 	case pdutype.Abort:
-		return fmt.Errorf("aborted")
+		a.Server = meta&apduMaskServer > 0
+		return d.apduAbort(a)
 	default:
 		return fmt.Errorf("unknown PDU type:%d", a.DataType)
 	}
@@ -144,6 +145,22 @@ func (d *Decoder) apduError(a *bactype.APDU) error {
 	a.Error.Code = errorcode.ErrorCode(c)
 
 	return nil
+}
+
+func (d *Decoder) apduReject(a *bactype.APDU) error {
+	var reason bactype.RejectReason
+	d.decode(&a.InvokeId)
+	d.decode(&reason)
+	a.Error = bactype.Error{Class: errorclass.Communication, Code: reason.ErrorCode()}
+	return d.Error()
+}
+
+func (d *Decoder) apduAbort(a *bactype.APDU) error {
+	var reason bactype.AbortReason
+	d.decode(&a.InvokeId)
+	d.decode(&reason)
+	a.Error = bactype.Error{Class: errorclass.Communication, Code: reason.ErrorCode()}
+	return d.Error()
 }
 
 func (d *Decoder) apduComplexAck(a *bactype.APDU) error {
@@ -188,7 +205,8 @@ const (
 	apduMaskSegmented         = 1 << 3
 	apduMaskMoreFollows       = 1 << 2
 	apduMaskSegmentedAccepted = 1 << 1
-	// Bit 0 is reserved
+	// Bit 0 is reserved, except in an Abort PDU where it is the SRV flag
+	apduMaskServer = 1 << 0
 )
 
 func (meta *APDUMetadata) setInfoMask(b bool, mask byte) {

@@ -50,7 +50,7 @@ import (
 func (c *Client) ReadMultiProperty(ctx context.Context, dev bactype.Device, rp bactype.ReadMultipleProperty) (bactype.ReadMultipleProperty, error) {
 	var out bactype.ReadMultipleProperty
 
-	id, err := c.tsm.ID(ctx)
+	id, err := c.tsm.IDFor(ctx, peerKey(dev.Addr))
 	if err != nil {
 		return out, fmt.Errorf("unable to get transaction id: %w", err)
 	}
@@ -91,7 +91,7 @@ func (c *Client) sendReadMultipleProperty(ctx context.Context, id uint8, dev bac
 		return out, err
 	}
 
-	raw, err := c.tsm.Receive(ctx, id)
+	raw, err := c.receive(ctx, id)
 	if err != nil {
 		return out, fmt.Errorf("unable to receive id %d: %w", id, err)
 	}
@@ -150,11 +150,29 @@ func (c *Client) ReadProperties(ctx context.Context, dev bactype.Device, propert
 		default:
 		}
 
-		propRes, err := c.ReadProperty(ctx, dev, bactype.ReadPropertyData{Object: object})
+		obj, err := c.readObjectProperties(ctx, dev, object)
 		if err != nil {
 			return bactype.ReadMultipleProperty{}, err
 		}
-		out.Objects[i] = propRes.Object
+		out.Objects[i] = obj
+	}
+	return out, nil
+}
+
+// readObjectProperties reads each of object's properties with its own ReadProperty,
+// as ReadProperty only reads one property per request.
+func (c *Client) readObjectProperties(ctx context.Context, dev bactype.Device, object bactype.Object) (bactype.Object, error) {
+	out := bactype.Object{ID: object.ID}
+	for _, prop := range object.Properties {
+		req := bactype.Object{ID: object.ID, Properties: []bactype.Property{prop}}
+		res, err := c.ReadProperty(ctx, dev, bactype.ReadPropertyData{Object: req})
+		if err != nil {
+			return bactype.Object{}, err
+		}
+		if len(res.Object.Properties) != 1 {
+			return bactype.Object{}, fmt.Errorf("read %v of %v: expected one property, got %d", prop.ID, object.ID, len(res.Object.Properties))
+		}
+		out.Properties = append(out.Properties, res.Object.Properties[0])
 	}
 	return out, nil
 }

@@ -63,6 +63,28 @@ func (c *Client) address(addr bactype.Address) (net.UDPAddr, error) {
 	return net.UDPAddr{}, fmt.Errorf("unable to parse bacnet address")
 }
 
+// peerKey identifies where a request to addr is sent, so replies can be matched to it.
+// It is empty, matching replies from anywhere, when addr is a broadcast.
+func peerKey(addr bactype.Address) string {
+	if addr.IsBroadcast() {
+		return ""
+	}
+	udp, err := addr.UDPAddr()
+	if err != nil {
+		return ""
+	}
+	return udpKey(&udp)
+}
+
+// udpKey returns addr as an IPv4 ip:port, so IPv4-mapped IPv6 addresses compare equal.
+func udpKey(addr *net.UDPAddr) string {
+	ip := addr.IP
+	if ip4 := ip.To4(); ip4 != nil {
+		ip = ip4
+	}
+	return (&net.UDPAddr{IP: ip, Port: addr.Port}).String()
+}
+
 // Sets the udp version used to transfer data
 // See https://golang.org/pkg/net/#DialUDP
 const udpVersion = "udp"

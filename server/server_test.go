@@ -399,11 +399,8 @@ func receive(t *testing.T, conn *net.UDPConn, wait time.Duration) (response, boo
 	if err := d.NPDU(&r.npdu); err != nil {
 		t.Fatal(err)
 	}
-	raw := append([]byte{}, d.Bytes()...)
 	if err := d.APDU(&r.apdu); err != nil {
-		// Decoder.APDU sets the type but decodes neither Reject nor Abort PDUs:
-		// keep the whole APDU for those
-		r.apdu.RawData = raw
+		t.Fatal(err)
 	}
 	return r, true
 }
@@ -518,7 +515,7 @@ func TestServer_rejectsUnsupportedServices(t *testing.T) {
 	}
 	c.send(types.BacFuncUnicast, request, e.Bytes())
 	r := c.receive()
-	if r.apdu.DataType != pdutype.Reject || r.apdu.RawData[1] != 5 || types.RejectReason(r.apdu.RawData[2]) != types.RejectUnrecognizedService {
+	if r.apdu.DataType != pdutype.Reject || r.apdu.InvokeId != 5 || r.apdu.Error.Code != errorcode.RejectUnrecognizedService {
 		t.Fatalf("want reject unrecognized-service, got %+v", r.apdu)
 	}
 }
@@ -536,7 +533,7 @@ func TestServer_abortsOversizeResponses(t *testing.T) {
 	req[1] = 0x00 // max APDU accepted: 50 bytes, too small for 23 object identifiers
 	c.send(types.BacFuncUnicast, request, req)
 	r := c.receive()
-	if r.apdu.DataType != pdutype.Abort || r.apdu.RawData[1] != 6 || types.AbortReason(r.apdu.RawData[2]) != types.AbortSegmentationNotSupported {
+	if r.apdu.DataType != pdutype.Abort || !r.apdu.Server || r.apdu.InvokeId != 6 || r.apdu.Error.Code != errorcode.AbortSegmentationNotSupported {
 		t.Fatalf("want abort segmentation-not-supported, got %+v", r.apdu)
 	}
 }

@@ -233,3 +233,61 @@ func TestEncoder_RejectAndAbortPDU(t *testing.T) {
 		t.Errorf("abort: got % x, want % x", got, want)
 	}
 }
+
+func TestDecoder_APDU_rejectAndAbort(t *testing.T) {
+	encode := func(f func(e *Encoder) error) []byte {
+		e := NewEncoder()
+		if err := f(e); err != nil {
+			t.Fatal(err)
+		}
+		return e.Bytes()
+	}
+	tests := []struct {
+		name string
+		raw  []byte
+		want bactype.APDU
+	}{
+		{
+			name: "reject",
+			raw:  encode(func(e *Encoder) error { return e.RejectPDU(8, bactype.RejectUnrecognizedService) }),
+			want: bactype.APDU{DataType: pdutype.Reject, InvokeId: 8,
+				Error: bactype.Error{Class: errorclass.Communication, Code: errorcode.RejectUnrecognizedService}},
+		},
+		{
+			name: "server abort",
+			raw:  encode(func(e *Encoder) error { return e.AbortPDU(9, true, bactype.AbortSegmentationNotSupported) }),
+			want: bactype.APDU{DataType: pdutype.Abort, InvokeId: 9, Server: true,
+				Error: bactype.Error{Class: errorclass.Communication, Code: errorcode.AbortSegmentationNotSupported}},
+		},
+		{
+			name: "client abort",
+			raw:  encode(func(e *Encoder) error { return e.AbortPDU(10, false, bactype.AbortOther) }),
+			want: bactype.APDU{DataType: pdutype.Abort, InvokeId: 10,
+				Error: bactype.Error{Class: errorclass.Communication, Code: errorcode.AbortOther}},
+		},
+		{
+			name: "proprietary reject",
+			raw:  encode(func(e *Encoder) error { return e.RejectPDU(11, 200) }),
+			want: bactype.APDU{DataType: pdutype.Reject, InvokeId: 11,
+				Error: bactype.Error{Class: errorclass.Communication, Code: errorcode.RejectProprietary}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got bactype.APDU
+			if err := NewDecoder(tt.raw).APDU(&got); err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("got  %+v\nwant %+v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDecoder_APDU_truncatedAbort(t *testing.T) {
+	var got bactype.APDU
+	if err := NewDecoder([]byte{0x71, 9}).APDU(&got); err == nil {
+		t.Fatalf("want an error, got %+v", got)
+	}
+}
