@@ -43,6 +43,7 @@ const MaxTransaction = 255
 const invalidID = 0
 
 type state struct {
+	peer      string // where the request went, replies from anywhere else are refused. Empty matches any peer
 	data      chan interface{}
 	reclaimed chan struct{} // closed when Put is called for the state id
 	sends     int32         // must hold TSM.mutex when accessing this variable
@@ -92,13 +93,23 @@ func New(size uint8) *TSM {
 	return t
 }
 
-// Send data to invoked id
+// Send data to invoked id, from any peer.
 func (t *TSM) Send(id uint8, b interface{}) error {
+	return t.SendFrom(id, "", b)
+}
+
+// SendFrom sends data to invoked id, if the transaction is with peer.
+// An empty peer, here or in IDFor, matches any peer.
+func (t *TSM) SendFrom(id uint8, peer string, b interface{}) error {
 	t.mutex.Lock()
 	s, ok := t.states[id]
 	if !ok {
 		t.mutex.Unlock()
 		return fmt.Errorf("id %d is not receiving", id)
+	}
+	if peer != "" && s.peer != "" && peer != s.peer {
+		t.mutex.Unlock()
+		return fmt.Errorf("id %d is waiting on %s, not %s", id, s.peer, peer)
 	}
 	s.sends++
 	data := s.data
@@ -153,6 +164,11 @@ func (t *TSM) Receive(ctx context.Context, id uint8) (interface{}, error) {
 
 // ID returns the invoke id that was used to save the state of this connection.
 func (t *TSM) ID(ctx context.Context) (uint8, error) {
+	return t.IDFor(ctx, "")
+}
+
+// IDFor is like ID, for a transaction with peer: SendFrom only delivers replies from peer.
+func (t *TSM) IDFor(ctx context.Context, peer string) (uint8, error) {
 	var id uint8
 	select {
 	case <-t.free.space:
@@ -170,6 +186,7 @@ func (t *TSM) ID(ctx context.Context) (uint8, error) {
 	// skip error checking, since we control new generation and what is put in the pool.
 	s := t.pool.Get().(*state)
 	t.mutex.Lock()
+	s.peer = peer
 	s.data = make(chan interface{})
 	s.reclaimed = make(chan struct{})
 	if s.sends > 0 {

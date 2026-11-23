@@ -11,6 +11,9 @@ import (
 	bactype "github.com/smart-core-os/gobacnet/types"
 )
 
+// ReadMultiplePropertyAck encodes the response to a ReadPropertyMultiple request.
+// Each property's Data is encoded as described by Encoder.PropertyValue, except that a
+// Data of type types.Error is encoded as a property access error for that property.
 func (e *Encoder) ReadMultiplePropertyAck(invokeID uint8, data bactype.ReadMultipleProperty) error {
 	a := bactype.APDU{
 		DataType: pdutype.ComplexAck,
@@ -35,7 +38,9 @@ func (e *Encoder) objectsWithData(objects []bactype.Object) error {
 		tag = 1
 		e.openingTag(tag)
 
-		e.propertiesWithData(obj.Properties)
+		if err := e.propertiesWithData(obj.Properties); err != nil {
+			return err
+		}
 
 		// Tag 1 - Closing Tag
 		e.closingTag(tag)
@@ -44,26 +49,30 @@ func (e *Encoder) objectsWithData(objects []bactype.Object) error {
 }
 
 func (e *Encoder) propertiesWithData(properties []bactype.Property) error {
-	var tag uint8
 	for _, prop := range properties {
 		// Tag 2 - Property ID
-		tag = 2
-		e.contextPropertyID(tag, prop.ID)
+		e.contextPropertyID(2, prop.ID)
 
-		// Tag 3 (OPTIONAL) - Array Length
-		tag++
+		// Tag 3 (OPTIONAL) - Array Index
 		if prop.ArrayIndex != ArrayAll {
-			e.contextUnsigned(tag, prop.ArrayIndex)
+			e.contextUnsigned(3, prop.ArrayIndex)
 		}
 
-		// Tag 4 Opening Tag
-		tag++
-		openedTag := tag
-		e.openingTag(openedTag)
-		e.write(prop.Data)
-		e.closingTag(openedTag)
+		if bacErr, ok := prop.Data.(bactype.Error); ok {
+			// Tag 5 - Property Access Error
+			e.openingTag(5)
+			e.AppData(bactype.Enumerated(bacErr.Class))
+			e.AppData(bactype.Enumerated(bacErr.Code))
+			e.closingTag(5)
+			continue
+		}
 
-		e.write(prop.Data)
+		// Tag 4 - Property Value
+		e.openingTag(4)
+		if err := e.PropertyValue(prop.Data); err != nil {
+			return err
+		}
+		e.closingTag(4)
 	}
 	return e.Error()
 }

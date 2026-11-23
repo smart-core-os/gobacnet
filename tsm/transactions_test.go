@@ -254,3 +254,47 @@ func TestDataTransaction(t *testing.T) {
 	t.Log(s)
 	<-done0
 }
+
+func TestTSM_SendFrom(t *testing.T) {
+	tsm := New(1)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	id, err := tsm.IDFor(ctx, "10.0.0.1:47808")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := tsm.SendFrom(id, "10.0.0.2:47808", "stray"); err == nil {
+		t.Fatal("delivered a reply from the wrong peer")
+	}
+	go func() {
+		if err := tsm.SendFrom(id, "10.0.0.1:47808", "reply"); err != nil {
+			t.Error(err)
+		}
+	}()
+	got, err := tsm.Receive(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "reply" {
+		t.Fatalf("got %v, want the matching peer's reply", got)
+	}
+
+	// the refused send must not hold on to the slot
+	if err := tsm.Put(id); err != nil {
+		t.Fatal(err)
+	}
+	id, err = tsm.IDFor(ctx, "")
+	if err != nil {
+		t.Fatalf("slot not released: %v", err)
+	}
+	// an empty peer, as for a broadcast, accepts a reply from anywhere
+	go func() {
+		if err := tsm.SendFrom(id, "10.0.0.3:47808", "any"); err != nil {
+			t.Error(err)
+		}
+	}()
+	if got, err := tsm.Receive(ctx, id); err != nil || got != "any" {
+		t.Fatalf("got %v, %v", got, err)
+	}
+}

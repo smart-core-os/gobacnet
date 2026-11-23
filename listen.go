@@ -118,28 +118,27 @@ func (c *Client) handleMsg(src *net.UDPAddr, b []byte) {
 			}
 		case pdutype.SimpleAck:
 			c.Log.Debug("Received Simple Ack")
-			err := c.tsm.Send(apdu.InvokeId, send)
-			if err != nil {
-				return
-			}
+			c.reply(src, apdu.InvokeId, send)
 		case pdutype.ComplexAck:
 			c.Log.Debug("Received Complex Ack")
-			err := c.tsm.Send(apdu.InvokeId, send)
-			if err != nil {
-				return
-			}
+			c.reply(src, apdu.InvokeId, send)
 		case pdutype.ConfirmedServiceRequest:
-			c.Log.Debug("Received  Confirmed Service Request")
-			err := c.tsm.Send(apdu.InvokeId, send)
-			if err != nil {
-				return
-			}
+			// A request is never the reply to one of ours, so it isn't handed to a waiting request.
+			c.Log.Debug("Ignored Confirmed Service Request")
 		case pdutype.Error:
 			c.Log.Debug("Received Error")
-			err := c.tsm.Send(apdu.InvokeId, apdu.Error)
-			if err != nil {
-				c.Log.Debugf("unable to send error to %d: %v", apdu.InvokeId, err)
+			c.reply(src, apdu.InvokeId, apdu.Error)
+		case pdutype.Reject:
+			c.Log.Debugf("Received Reject for %d: %v", apdu.InvokeId, apdu.Error)
+			c.reply(src, apdu.InvokeId, apdu.Error)
+		case pdutype.Abort:
+			if !apdu.Server {
+				// The client end of a transaction sent this, so it isn't about one of our requests.
+				c.Log.Debugf("Ignored client Abort for %d: %v", apdu.InvokeId, apdu.Error)
+				break
 			}
+			c.Log.Debugf("Received Abort for %d: %v", apdu.InvokeId, apdu.Error)
+			c.reply(src, apdu.InvokeId, apdu.Error)
 		default:
 			// Ignore it
 			// Log.WithFields(Log.Fields{"raw": b}).Debug("An ignored packet went through")
@@ -154,6 +153,13 @@ func (c *Client) handleMsg(src *net.UDPAddr, b []byte) {
 		c.Log.Debug("Ignored NDPU Forwarded")
 	}
 
+}
+
+// reply hands data to the request waiting on invokeID, if that request was sent to src.
+func (c *Client) reply(src *net.UDPAddr, invokeID uint8, data interface{}) {
+	if err := c.tsm.SendFrom(invokeID, udpKey(src), data); err != nil {
+		c.Log.Debugf("unable to deliver reply %d from %v: %v", invokeID, src, err)
+	}
 }
 
 // listen for incoming bacnet packets.

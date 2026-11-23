@@ -121,7 +121,11 @@ type APDU struct {
 	WindowNumber              uint8
 	Service                   ServiceConfirmed
 	UnconfirmedService        ServiceUnconfirmed
-	Error                     Error
+	// Error is set for Error PDUs, and for Reject and Abort PDUs as a Communication error
+	// whose code carries the reason.
+	Error Error
+	// Server is the SRV flag of an Abort PDU: true when the device that received the request sent it.
+	Server bool
 
 	// This is the raw data passed based on the service
 	RawData []byte

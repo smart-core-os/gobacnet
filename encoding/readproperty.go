@@ -102,11 +102,27 @@ func (e *Encoder) ReadPropertyAck(invokeID uint8, data bactype.ReadPropertyData)
 	}
 
 	e.openingTag(tagID)
-	tagID++
 	prop := data.Object.Properties[0]
-	e.AppData(prop.Data)
+	if err := e.PropertyValue(prop.Data); err != nil {
+		return err
+	}
 	e.closingTag(tagID)
 	return e.Error()
+}
+
+// PropertyValue encodes the value of a property as application tagged data.
+// A []interface{} is encoded as a sequence of values, as used by array and list properties;
+// each element must be a type supported by AppData.
+func (e *Encoder) PropertyValue(data interface{}) error {
+	if list, ok := data.([]interface{}); ok {
+		for _, v := range list {
+			if err := e.AppData(v); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return e.AppData(data)
 }
 
 func (d *Decoder) ReadProperty(data *bactype.ReadPropertyData) error {

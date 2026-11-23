@@ -10,7 +10,7 @@ import (
 
 func (c *Client) WriteProperty(ctx context.Context, dest bactype.Device, wp bactype.ReadPropertyData, priority uint) error {
 
-	id, err := c.tsm.ID(ctx)
+	id, err := c.tsm.IDFor(ctx, peerKey(dest.Addr))
 	if err != nil {
 		return fmt.Errorf("unable to get an transaction id: %w", err)
 	}
@@ -48,7 +48,7 @@ func (c *Client) WriteProperty(ctx context.Context, dest bactype.Device, wp bact
 			continue
 		}
 
-		raw, err = c.tsm.Receive(ctx, id)
+		raw, err = c.receive(ctx, id)
 		if err != nil {
 			continue
 		}

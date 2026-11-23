@@ -33,6 +33,7 @@ package gobacnet
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/smart-core-os/gobacnet/encoding"
@@ -42,7 +43,7 @@ import (
 // ReadProperty reads a single property from a single object in the given device.
 func (c *Client) ReadProperty(ctx context.Context, dest bactype.Device, rp bactype.ReadPropertyData) (bactype.ReadPropertyData, error) {
 
-	id, err := c.tsm.ID(ctx)
+	id, err := c.tsm.IDFor(ctx, peerKey(dest.Addr))
 	if err != nil {
 		return bactype.ReadPropertyData{}, fmt.Errorf("unable to get an transaction id: %w", err)
 	}
@@ -82,7 +83,7 @@ func (c *Client) ReadProperty(ctx context.Context, dest bactype.Device, rp bacty
 		}
 
 		var raw interface{}
-		raw, err = c.tsm.Receive(ctx, id)
+		raw, err = c.receive(ctx, id)
 		if err != nil {
 			continue
 		}
@@ -104,4 +105,21 @@ func (c *Client) ReadProperty(ctx context.Context, dest bactype.Device, rp bacty
 		return out, dec.Error()
 	}
 	return bactype.ReadPropertyData{}, err
+}
+
+var errRequestTimeout = errors.New("no reply within the request timeout")
+
+// receive waits for the reply to transaction id, for no longer than the client's request timeout.
+// When that timeout is hit the error wraps context.DeadlineExceeded.
+func (c *Client) receive(ctx context.Context, id uint8) (interface{}, error) {
+	if c.requestTimeout <= 0 {
+		return c.tsm.Receive(ctx, id)
+	}
+	attemptCtx, cancel := context.WithTimeoutCause(ctx, c.requestTimeout, errRequestTimeout)
+	defer cancel()
+	raw, err := c.tsm.Receive(attemptCtx, id)
+	if err != nil && ctx.Err() == nil && context.Cause(attemptCtx) == errRequestTimeout {
+		return nil, fmt.Errorf("%w after %v: %w", errRequestTimeout, c.requestTimeout, err)
+	}
+	return raw, err
 }
